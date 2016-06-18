@@ -1,0 +1,77 @@
+---
+title: "Vota Unicamp!"
+author: "Benilton S Carvalho"
+output: html_document
+---
+
+```{r input, message=FALSE}
+Sys.setlocale(locale='UTF-8')
+library(stringr)
+library(rvest)
+library(googleVis)
+library(RgoogleMaps)
+page = read_html('http://votaunicamp.herokuapp.com/results/', encoding='UTF-8')
+tbl = html_table(page)[[2]]
+head(tbl)
+```
+
+```{r format}
+mytbl = data.frame(codigo=as.integer(str_extract(tbl$Curso, "^\\d+")),
+                   nivel=NA,
+                   curso=gsub("^(\\d+) - (.*)$", "\\2", tbl$Curso),
+                   total=tbl$Total,
+                   sim=as.integer(str_extract(tbl$Sim, "^\\d+")),
+                   nao=as.integer(str_extract(tbl$Não, "^\\d+")),
+                   abstencao=as.integer(str_extract(tbl$Abstenções, "^\\d+")))
+nivel = str_extract(mytbl$curso, "(Dou|Mes)[a-z]+")
+nivel[grepl("Mes", nivel)] = "Mestrado"
+nivel[grepl("Dou", nivel)] = "Doutorado"
+nivel[is.na(nivel)] = "Graduacao"
+mytbl$nivel = nivel
+rm(nivel)
+mytbl$curso = gsub("(Mes|Dou).+ em (.*)$", "\\2", mytbl$curso)
+head(mytbl)
+```
+
+```{r plot_gauge}
+tbl0 = subset(mytbl, nivel=='Graduacao')
+tbl0$pnao = round(tbl0$nao/tbl0$total*100, 0)
+gauge = gvisGauge(tbl0[, c('curso', 'pnao')], 'curso', 'nao',
+                  options=list(min=0, max=100, greenFrom=0,
+                                 greenTo=20, yellowFrom=40, yellowTo=60,
+                                 redFrom=80, redTo=100, width=400, height=300))
+plot(gauge)
+```
+
+```{r enderecos}
+ends = data.frame(instituto=c('IMECC', 'FEM', 'FEF'),
+           lat=c(-22.81583,-22.81938,-22.81476),
+           lon=c(-47.06769,-47.06592,-47.07333))
+map = leaflet()
+map = addTiles(map)
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
+map
+```
+
+```{r plot_geo}
+locs = sapply(tbl0$curso, function(crs) getGeoCode(paste(crs, 'Universidade Estadual de Campinas')))
+tbl0$lat = locs[1,]
+tbl0$lon = locs[2,]
+geochart = gvisGeoChart()
+```
+
+```{r stats}
+p = with(mytbl, nao/(total))
+mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
+ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
+colnames(ics) = c("lower", "upper")
+mytbl$p = p
+mytbl = cbind(mytbl, ics, data=today)
+```
+
+```{r teste}
+subset(mytbl, lower > 0.50)
+library(RgoogleMaps)
+addrs = paste(mytbl$curso, "Universidade Estadual de Campinas")
+locs = getGeoCode("Universidade Estadual de Campinas")
+```
