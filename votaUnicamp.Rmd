@@ -4,16 +4,20 @@ author: "Benilton S Carvalho"
 output: html_document
 ---
 
+## Setup
+
 ```{r input, message=FALSE}
 Sys.setlocale(locale='UTF-8')
 library(stringr)
 library(rvest)
 library(googleVis)
-library(RgoogleMaps)
+library(leaflet)
 page = read_html('http://votaunicamp.herokuapp.com/results/', encoding='UTF-8')
 tbl = html_table(page)[[2]]
 head(tbl)
 ```
+
+## Formatação de Dados
 
 ```{r format}
 mytbl = data.frame(codigo=as.integer(str_extract(tbl$Curso, "^\\d+")),
@@ -33,6 +37,8 @@ mytbl$curso = gsub("(Mes|Dou).+ em (.*)$", "\\2", mytbl$curso)
 head(mytbl)
 ```
 
+## Gauge Plots
+
 ```{r plot_gauge}
 tbl0 = subset(mytbl, nivel=='Graduacao')
 tbl0$pnao = round(tbl0$nao/tbl0$total*100, 0)
@@ -42,6 +48,15 @@ gauge = gvisGauge(tbl0[, c('curso', 'pnao')], 'curso', 'nao',
                                  redFrom=80, redTo=100, width=400, height=300))
 plot(gauge)
 ```
+
+## Obtenção de Dados Geográficos
+
+Obter localizações (lat/lon) por meio do OpenStreet Maps:
+
+- Abrir OpenStreet Maps (OSM) em (http://www.openstreetmap.org/#map=16/-22.8173/-47.0677)
+- Dar zoom máximo no instituto de interesse
+- Olhar o endereço na barra de endereço após o zoom
+- Atualizar o data.frame abaixo com as informações
 
 ```{r enderecos}
 ends = data.frame(instituto=c('IMECC', 'FEM', 'FEF'),
@@ -53,12 +68,7 @@ map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
 map
 ```
 
-```{r plot_geo}
-locs = sapply(tbl0$curso, function(crs) getGeoCode(paste(crs, 'Universidade Estadual de Campinas')))
-tbl0$lat = locs[1,]
-tbl0$lon = locs[2,]
-geochart = gvisGeoChart()
-```
+## Intervalos de Confiança
 
 ```{r stats}
 p = with(mytbl, nao/(total))
@@ -66,12 +76,5 @@ mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
 ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
 colnames(ics) = c("lower", "upper")
 mytbl$p = p
-mytbl = cbind(mytbl, ics, data=today)
-```
-
-```{r teste}
-subset(mytbl, lower > 0.50)
-library(RgoogleMaps)
-addrs = paste(mytbl$curso, "Universidade Estadual de Campinas")
-locs = getGeoCode("Universidade Estadual de Campinas")
+mytbl = cbind(mytbl, ics)
 ```
