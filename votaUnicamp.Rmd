@@ -163,7 +163,8 @@ Gráfico de barras do total de votos por instituto e tabela com os votos
 library(formattable)
 dados2 = as.data.frame(dados[,-c(5:7)])
 names(dados2) = c("Instituto", "Não", "Sim", "Abstenções", "Total")
-barplot(as.numeric(dados[,8]),  names.arg = inst, main = "Total de votos por Instituto")
+barplot(as.numeric(dados[,8]),  names.arg = inst, main = "Total de votos por Instituto", col = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"))
+legend("topright",legend=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC', 'FEA', 'FCM', 'IFCH','IEL', 'IA', 'IC', 'IE', 'IG', 'IQ', 'FE', 'FEAGRI', 'FEQ', 'PROFIS', 'FCF'),fill = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"), bty = "n")
 formattable(dados2)
 ```
 
@@ -177,3 +178,4 @@ colnames(ics) = c("lower", "upper")
 mytbl$p = p
 mytbl = cbind(mytbl, ics)
 ```
+
