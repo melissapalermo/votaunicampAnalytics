@@ -4,9 +4,7 @@ author: "Grupo"
 output: html_document
 ---
 
-## Setup
-
-Introdução:
+#Introdução
 
 ```{r input, message=FALSE}
 Sys.setlocale("LC_TIME")
@@ -21,7 +19,7 @@ head(tbl)
 
 ## Formatação de Dados
 
-```{r format}
+```{r format, message=FALSE, echo=FALSE, warning=FALSE, results='hide'}
 mytbl = data.frame(codigo=as.integer(str_extract(tbl$Curso, "^\\d+")),
                    nivel=NA,
                    curso=gsub("^(\\d+) - (.*)$", "\\2", tbl$Curso),
