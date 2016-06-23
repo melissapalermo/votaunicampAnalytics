@@ -148,10 +148,17 @@ for(i in 1:24){
 }
 
 dados=cbind(inst,nao_total, sim_total, abs_total, propn_total, props_total, propabs_total, total_inst)
-
 ```
 
+Gráfico de barras do total de votos por instituto e tabela com os votos
 
+```{r echo=FALSE, warning=FALSE}
+library(formattable)
+dados2 = as.data.frame(dados[,-c(5:7)])
+names(dados2) = c("Instituto", "Não", "Sim", "Abstenções", "Total")
+barplot(as.numeric(dados[,8]),  names.arg = inst, main = "Total de votos por Instituto")
+formattable(dados2)
+```
 
 ## Intervalos de Confiança
 
