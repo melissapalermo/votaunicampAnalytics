@@ -65,6 +65,13 @@ ends = data.frame(instituto=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC'
 map = leaflet()
 map = addTiles(map)
 map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
+
+ends= cbind(ends, propn = propn_total[1:21])
+
+pal= colorQuantile("RdBu",ends$propn, n=8)
+map = leaflet()
+map = addTiles(map)
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto, color = pal(ends$propn))
 map
 ```
 
