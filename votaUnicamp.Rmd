@@ -212,3 +212,5 @@ mytbl$p = p
 mytbl = cbind(mytbl, ics)
 ```
 
+Intervalo de confiança para a proporção:
+
