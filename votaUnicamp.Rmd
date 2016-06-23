@@ -68,6 +68,44 @@ map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
 map
 ```
 
+##Proporções
+
+```{r stats, message=FALSE, echo=FALSE, warning=FALSE}
+#Proporção de Não
+p = with(mytbl, nao/(total))
+mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
+ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
+colnames(ics) = c("lower", "upper")
+mytbl$p = p
+mytbl = cbind(mytbl, ics)
+```
+
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+#Proporção de Sim
+p = with(mytbl, sim/(total))
+mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
+ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
+mytbl[,11]=p
+mytbl[,12]=ics[,1]
+mytbl[,13]=ics[,2]
+```
+
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+#Proporção de Abstenho
+p = with(mytbl, abstencao/(total))
+mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
+ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
+mytbl[,14]=p
+mytbl[,15]=ics[,1]
+mytbl[,16]=ics[,2]
+names(mytbl) <- c(names(mytbl)[1:7],"p-nao", "inf-n", "sup-n", "p-sim", "inf-s","sup-s","p-abs", "inf-a", "sup-a")
+mytbl[,8:16]=round(mytbl[,8:16],2)
+
+```
+
+
 ## Intervalos de Confiança
 
 ```{r stats}
