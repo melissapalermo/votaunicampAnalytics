@@ -1,13 +1,13 @@
 ---
 title: "Vota Unicamp!"
-author: "Benilton S Carvalho"
+author: "Grupo"
 output: html_document
 ---
 
 ## Setup
 
 ```{r input, message=FALSE}
-Sys.setlocale(locale='UTF-8')
+Sys.setlocale("LC_TIME")
 library(stringr)
 library(rvest)
 library(googleVis)
