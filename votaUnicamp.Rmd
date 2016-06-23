@@ -40,6 +40,7 @@ head(mytbl)
 ```{r institutos, message=FALSE, echo=FALSE, warning=FALSE}
 n=length(mytbl$curso)
 instituto=rep(0,n)
+area=rep(0,n)
 
 etiqueta = function(nivel,cod){
   
@@ -47,16 +48,19 @@ etiqueta = function(nivel,cod){
     cursosg = read.table("Grad.csv", header = TRUE, sep = ",")
     ind = which(cursosg$cod==cod)
     instituto = as.character(cursosg$grad[ind])
+    area = as.character(cursosg$area[ind])
   }
   if(nivel=="Doutorado"){
     cursosd = read.table("Dout.csv", header = TRUE, sep = ",")
     ind = which(cursosd$cod==cod)
     instituto = as.character(cursosd$dou[ind])
+    area = as.character(cursosg$area[ind])
   }
    if(nivel=="Mestrado"){
     cursosm = read.table("Mestr.csv", header = TRUE, sep = ",")
     ind = which(cursosm$cod==cod)
     instituto = as.character(cursosm$mes[ind])
+    area = as.character(cursosg$area[ind])
    }
   
   return (instituto)
