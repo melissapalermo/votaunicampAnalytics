@@ -37,6 +37,39 @@ mytbl$curso = gsub("(Mes|Dou).+ em (.*)$", "\\2", mytbl$curso)
 head(mytbl)
 ```
 
+```{r institutos, message=FALSE, echo=FALSE, warning=FALSE}
+n=length(mytbl$curso)
+instituto=rep(0,n)
+
+etiqueta = function(nivel,cod){
+  
+  if(nivel=="Graduacao"){
+    cursosg = read.table("Grad.csv", header = TRUE, sep = ",")
+    ind = which(cursosg$cod==cod)
+    instituto = as.character(cursosg$grad[ind])
+  }
+  if(nivel=="Doutorado"){
+    cursosd = read.table("Dout.csv", header = TRUE, sep = ",")
+    ind = which(cursosd$cod==cod)
+    instituto = as.character(cursosd$dou[ind])
+  }
+   if(nivel=="Mestrado"){
+    cursosm = read.table("Mestr.csv", header = TRUE, sep = ",")
+    ind = which(cursosm$cod==cod)
+    instituto = as.character(cursosm$mes[ind])
+   }
+  
+  return (instituto)
+}
+
+for(i in 1:n){
+  instituto[i] = etiqueta(mytbl$nivel[i], mytbl$codigo[i] )
+}
+
+
+mytbl=cbind(instituto,mytbl)
+```
+
 ## Gauge Plots
 
 ```{r plot_gauge}
@@ -117,17 +150,17 @@ mytbl[,8:16]=round(mytbl[,8:16],2)
 ```{r}
 nao_total=rep(0,24)
 for(i in 1:24){
- nao_total[i]=c(sum(mytbl$nao[which(institutos==inst[i])])) 
+ nao_total[i]=c(sum(mytbl$nao[which(instituto==ends$instituto[i])])) 
 }
 
 sim_total=rep(0,24)
 for(i in 1:24){
- sim_total[i]=c(sum(mytbl$sim[which(institutos==inst[i])])) 
+ sim_total[i]=c(sum(mytbl$sim[which(instituto==ends$instituto[i])])) 
 }
 
 abs_total = rep(0,24)
 for(i in 1:24){
- abs_total[i]=c(sum(mytbl$abstencao[which(institutos==inst[i])])) 
+ abs_total[i]=c(sum(mytbl$abstencao[which(instituto==ends$instituto[i])])) 
 }
 
 props_total=rep(0,24)
@@ -151,10 +184,10 @@ for(i in 1:24){
 
 total_inst=rep(0,24)
 for(i in 1:24){
- total_inst[i]=c(sum(mytbl$total[which(institutos==inst[i])])) 
+ total_inst[i]=c(sum(mytbl$total[which(instituto==ends$instituto[i])]))
 }
 
-dados=cbind(inst,nao_total, sim_total, abs_total, propn_total, props_total, propabs_total, total_inst)
+dados=cbind(ends$instituto,nao_total, sim_total, abs_total, propn_total, props_total, propabs_total, total_inst)
 ```
 
 Gráfico de barras do total de votos por instituto e tabela com os votos
@@ -163,8 +196,8 @@ Gráfico de barras do total de votos por instituto e tabela com os votos
 library(formattable)
 dados2 = as.data.frame(dados[,-c(5:7)])
 names(dados2) = c("Instituto", "Não", "Sim", "Abstenções", "Total")
-barplot(as.numeric(dados[,8]),  names.arg = inst, main = "Total de votos por Instituto", col = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"))
-legend("topright",legend=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC', 'FEA', 'FCM', 'IFCH','IEL', 'IA', 'IC', 'IE', 'IG', 'IQ', 'FE', 'FEAGRI', 'FEQ', 'PROFIS', 'FCF'),fill = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"), bty = "n")
+barplot(as.numeric(dados[,8]), main = "Total de votos por Instituto", col = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"))
+legend("topright",legend=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC', 'FEA', 'FCM', 'IFCH','IEL', 'IA', 'IC', 'IE', 'IG', 'IQ', 'FE', 'FEAGRI', 'FEQ', 'PROFIS', 'FCF'),fill = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"), ncol=3 ,bty = "n", cex = 0.6)
 formattable(dados2)
 ```
 
