@@ -105,6 +105,53 @@ mytbl[,8:16]=round(mytbl[,8:16],2)
 
 ```
 
+###Proporções por instituto
+
+```{r}
+nao_total=rep(0,24)
+for(i in 1:24){
+ nao_total[i]=c(sum(mytbl$nao[which(institutos==inst[i])])) 
+}
+
+sim_total=rep(0,24)
+for(i in 1:24){
+ sim_total[i]=c(sum(mytbl$sim[which(institutos==inst[i])])) 
+}
+
+abs_total = rep(0,24)
+for(i in 1:24){
+ abs_total[i]=c(sum(mytbl$abstencao[which(institutos==inst[i])])) 
+}
+
+props_total=rep(0,24)
+for(i in 1:24){
+  props_total[i] = sim_total[i]/(nao_total[i]+sim_total[i]+abs_total[i])
+  props_total[i] = round(props_total[i],2)
+}
+
+
+propn_total=rep(0,24)
+for(i in 1:24){
+  propn_total[i] = nao_total[i]/(nao_total[i]+sim_total[i]+abs_total[i])
+  propn_total[i] = round(propn_total[i],2)
+}
+
+propabs_total=rep(0,24)
+for(i in 1:24){
+  propabs_total[i] = abs_total[i]/(nao_total[i]+sim_total[i]+abs_total[i])
+  propabs_total[i] = round(propabs_total[i],2)
+}
+
+total_inst=rep(0,24)
+for(i in 1:24){
+ total_inst[i]=c(sum(mytbl$total[which(institutos==inst[i])])) 
+}
+
+dados=cbind(inst,nao_total, sim_total, abs_total, propn_total, props_total, propabs_total, total_inst)
+
+```
+
+
 
 ## Intervalos de Confiança
 
