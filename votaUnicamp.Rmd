@@ -1,9 +1,8 @@
 ---
 title: "Vota Unicamp!"
 author: "Grupo"
-header-includes:
-  - \setlength\parindent{24pt}\setlength{\parskip}{0.0pt plus 1.0pt}
-output: pdf_document
+output: html_document
+header-includes: \setlength\parindent{24pt}\setlength{\parskip}{0.0pt plus 1.0pt}
 ---
 
 #Introdução
@@ -18,18 +17,7 @@ library(googleVis)
 library(leaflet)
 page = read_html('http://votaunicamp.herokuapp.com/results/', encoding='UTF-8')
 tbl = html_table(page)[[2]]
-head(tbl)
 ```
-
-#Objetivos
-
-Deseja-se verificar a proporção de alunos contrários à greve estudantil. Além disso também temos o intuito de estudar o comportamento da classe, como por exemplo, se existe uma relação entre a área de estudo e o voto. Assim podemos caracterizar o perfil do aluno favorável ou contrário a mobilização.
-
-#Metodologia
-
-## Formatação de Dados
-
-Extraímos do site uma tabela com o número de votos de cada curso, sim não e abstenho, incluindo cursos da Unicamp campus Limeira e Piracicaba.
 
 ```{r format, message=FALSE, echo=FALSE, warning=FALSE}
 mytbl = data.frame(codigo=as.integer(str_extract(tbl$Curso, "^\\d+")),
@@ -46,10 +34,10 @@ nivel[is.na(nivel)] = "Graduacao"
 mytbl$nivel = nivel
 rm(nivel)
 mytbl$curso = gsub("(Mes|Dou).+ em (.*)$", "\\2", mytbl$curso)
-head(mytbl)
 ```
 
 ```{r melhoropcaoinstitutos, echo=FALSE}
+setwd("~/Documentos/Github/votaunicampAnalytics")
 gradinst = cbind(nivel='Graduacao', read.table('Grad.csv', header=TRUE, sep=','))
 doutinst = cbind(nivel='Doutorado', read.table('Dout.csv', header=TRUE, sep=','))
 mestinst = cbind(nivel='Mestrado', read.table('Mestr.csv', header=TRUE, sep=','))
@@ -59,30 +47,28 @@ rm(gradinst, doutinst, mestinst)
 mytbl = merge(mytbl, inst)
 ```
 
-##Análises Exploratórias
+#Objetivos
 
-Podemos fazer algumas análises exploratórias para estudar o comportamento dos nossos dados. Uma das maneiras que encontramos para isso foi mapear o campus da Unicamp a fim de ver qual o posicionamento de cada instituto. Temos na Figura 1
-o mapeamento de acordo com a 
+Deseja-se verificar a proporção de alunos contrários à greve estudantil. Além disso também temos o intuito de estudar o comportamento da classe, como por exemplo, se existe uma relação entre a área de estudo e o voto. Assim podemos caracterizar o perfil do aluno favorável ou contrário a mobilização.
 
-```{r echo=FALSE, message=FALSE, fig.cap="Mapeamento do Campus"}
+#Metodologia
+
+## Formatação de Dados
+
+Extraímos do site uma tabela com o número de votos de cada curso, sim não e abstenho, incluindo cursos da Unicamp campus Limeira e Piracicaba.
+
+```{r echo=FALSE}
+head(tbl)
+```
+
+
+```{r echo=FALSE, message=FALSE}
 ends = data.frame(instituto=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC', 'FEA', 'FCM', 'IFCH','IEL', 'IA', 'IC', 'IE', 'IG', 'IQ', 'FE', 'FEAGRI', 'FEQ', 'PROFIS', 'FCF'),
            lat=c(-22.81583,-22.81657,-22.81935,-22.81938,-22.81476,-22.82132,-22.81596,-22.82063,-22.83063,-22.81546, -22.81537, -22.81531, -22.81488, -22.81480, -22.81328, -22.81889, -22.81658, -22.81927, -22.81989, -22.81749, -22.81770),
            lon=c(-47.06769,-47.06698,-47.06953,-47.06592,-47.07333,-47.06587,-47.06383,-47.06746,-47.06199,-47.06838,-47.06909, -47.07009, -47.06484, -47.06590, -47.06871, -47.06779, -47.06566, -47.06042,-47.06511, -47.06847, -47.07084 )) 
 ```
 
-```{r enderecos, echo=FALSE}
-map = leaflet()
-map = addTiles(map)
-map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
 
-ends = merge(ends, dados)
-
-pal= colorQuantile("RdBu",ends$propn, n=8)
-map = leaflet()
-map = addTiles(map)
-map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto, color = pal(ends$pnao))
-map
-```
 
 ##Proporções
 
@@ -132,26 +118,35 @@ dados$pnao = with(dados, nao/total)
 dados$pabs = with(dados, abstencao/total)
 ```
 
-## Obtenção de Dados Geográficos
+##Análises Exploratórias
 
-Obter localizações (lat/lon) por meio do OpenStreet Maps:
+Podemos fazer algumas análises exploratórias para estudar o comportamento dos nossos dados. Uma das maneiras que encontramos para isso foi mapear o campus da Unicamp a fim de ver qual o posicionamento de cada instituto. Temos na Figura 1
+o mapeamento de acordo com a proporção de votos contrários à greve por instituto.
 
-- Abrir OpenStreet Maps (OSM) em (http://www.openstreetmap.org/#map=16/-22.8173/-47.0677)
-- Dar zoom máximo no instituto de interesse
-- Olhar o endereço na barra de endereço após o zoom
-- Atualizar o data.frame abaixo com as informações
+```{r enderecos, echo=FALSE, fig.cap="Mapeamento do campus Unicamp Campinas"}
+map = leaflet()
+map = addTiles(map)
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
 
+ends = merge(ends, dados)
 
+pal= colorQuantile("RdBu",ends$propn, n=8)
+map = leaflet()
+map = addTiles(map)
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto, color = pal(ends$pnao))
+map
+```
 
+Também podemos estudar a abrangência do site, ou seja, quais institutos de fato votaram e quantos votos temos. O que encontra-se na Figura 2.
 
-Gráfico de barras do total de votos por instituto e tabela com os votos
-
-```{r grafbar, echo=FALSE}
+```{r grafbar, echo=FALSE, fig.cap="Gráfico do total de votos por instituto"}
 library(ggplot2)
 ggplot(dados, aes(reorder(instituto, total), total)) + geom_bar(stat='identity') + coord_flip() + theme_bw()
 ```
 
-```{r, echo=FALSE}
+
+
+```{r, echo=FALSE, fig.cap="Tabela de votos por instituto"}
 library(formattable)
 dados2 = dados[, c('instituto', 'nao', 'sim', 'abstencao', 'total')]
 names(dados2) = c("Instituto", "Não", "Sim", "Abstenções", "Total")
