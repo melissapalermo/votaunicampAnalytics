@@ -9,7 +9,7 @@ output: html_document
 \newparagraph Em meio à crise que o Brasil se encontra, a educação foi afetada com cortes de orçamento e, infelizmente, isso inclui Universidades. Diante disso, o movimento grevista tem tomado conta da Unicamp. A greve foi decidida por meio de assembleias estudantis, contudo muito se questiona a respeito da representatividade das decisões tomadas uma vez que existe pouca adesão. Com intuito de verificar qual a opinião da classe estudantil foi criado o site “https://votaunicamp.herokuapp.com/” para que os alunos matriculados tanto em cursos de graduação e pós graduação votassem e se quisessem justificassem o voto.
 
 ```{r input, message=FALSE}
-Sys.setlocale("LC_TIME")
+if (Sys.info()['sysname'] == 'Darwin') Sys.setlocale(locale='UTF-8')
 library(stringr)
 library(rvest)
 library(googleVis)
@@ -39,39 +39,16 @@ mytbl$curso = gsub("(Mes|Dou).+ em (.*)$", "\\2", mytbl$curso)
 head(mytbl)
 ```
 
-```{r institutos, message=FALSE, echo=FALSE, warning=FALSE}
-n=length(mytbl$curso)
-instituto=rep(0,n)
-area=rep(0,n)
-
-etiqueta = function(nivel, cod){
-  
-  if(nivel=="Graduacao"){
-    cursosg = read.table("Grad.csv", header = TRUE, sep = ",")
-    ind = which(cursosg$cod==cod)
-    instituto = as.character(cursosg$grad[ind])
-  }
-  if(nivel=="Doutorado"){
-    cursosd = read.table("Dout.csv", header = TRUE, sep = ",")
-    ind = which(cursosd$cod==cod)
-    instituto = as.character(cursosd$dou[ind])
-  }
-   if(nivel=="Mestrado"){
-    cursosm = read.table("Mestr.csv", header = TRUE, sep = ",")
-    ind = which(cursosm$cod==cod)
-    instituto = as.character(cursosm$mes[ind])
-   }
-  
-  return (instituto)
-}
-
-for(i in 1:n){
-  instituto[i] = etiqueta(mytbl$nivel[i], mytbl$codigo[i] )
-}
-
-
-mytbl=cbind(instituto,mytbl)
+```{r melhoropcaoinstitutos}
+gradinst = cbind(nivel='Graduacao', read.table('Grad.csv', header=TRUE, sep=','))
+doutinst = cbind(nivel='Doutorado', read.table('Dout.csv', header=TRUE, sep=','))
+mestinst = cbind(nivel='Mestrado', read.table('Mestr.csv', header=TRUE, sep=','))
+names(gradinst) = names(doutinst) = names(mestinst) = c('nivel', 'codigo', 'instituto', 'area')
+inst = rbind(gradinst, doutinst, mestinst)
+rm(gradinst, doutinst, mestinst)
+mytbl = merge(mytbl, inst)
 ```
+
 
 ## Gauge Plots
 
@@ -95,82 +72,53 @@ ends = data.frame(instituto=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC'
 
 ```{r , message=FALSE, echo=FALSE, warning=FALSE}
 #Proporção de Não
-p = with(mytbl, nao/(total))
+pnao = with(mytbl, nao/total)
 mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
-ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
-colnames(ics) = c("lower", "upper")
-mytbl$p = p
+ics = cbind(pmax(pnao-mes, 0), pmin(pnao+mes, 1))
+colnames(ics) = c("lowerpnao", "upperpnao")
+mytbl$pnao = pnao
 mytbl = cbind(mytbl, ics)
+rm(pnao, mes, ics)
 ```
 
 
 ```{r message=FALSE, echo=FALSE, warning=FALSE}
 #Proporção de Sim
-p = with(mytbl, sim/(total))
+psim = with(mytbl, sim/total)
 mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
-ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
-mytbl[,11]=p
-mytbl[,12]=ics[,1]
-mytbl[,13]=ics[,2]
+ics = cbind(pmax(psim-mes, 0), pmin(psim+mes, 1))
+mytbl$psim=psim
+mytbl$lowerpsim=ics[,1]
+mytbl$upperpsim=ics[,2]
+rm(psim, mes, ics)
 ```
 
 
 ```{r message=FALSE, echo=FALSE, warning=FALSE}
 #Proporção de Abstenho
-p = with(mytbl, abstencao/(total))
+pabs = with(mytbl, abstencao/total)
 mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
-ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
-mytbl[,14]=p
-mytbl[,15]=ics[,1]
-mytbl[,16]=ics[,2]
-names(mytbl) <- c(names(mytbl)[1:7],"p-nao", "inf-n", "sup-n", "p-sim", "inf-s","sup-s","p-abs", "inf-a", "sup-a")
-mytbl[,8:16]=round(mytbl[,8:16],2)
+ics = cbind(pmax(pabs-mes, 0), pmin(pabs+mes, 1))
+mytbl$pabs=pabs
+mytbl$lowerpabs=ics[,1]
+mytbl$upperpabs=ics[,2]
+## comentei abaixo pq nao eh legal usar hifen no nome de var
+## names(mytbl) <- c(names(mytbl)[1:7],"p-nao", "inf-n", "sup-n", "p-sim", "inf-s","sup-s","p-abs", "inf-a", "sup-a")
+## comentei abaixo para evitar erros por arredondamento
+##mytbl[,8:16]=round(mytbl[,8:16],2)
 
 ```
 
 ###Proporções por instituto
 
 ```{r}
-nao_total=rep(0,24)
-for(i in 1:24){
- nao_total[i]=c(sum(mytbl$nao[which(instituto==ends$instituto[i])])) 
-}
-
-sim_total=rep(0,24)
-for(i in 1:24){
- sim_total[i]=c(sum(mytbl$sim[which(instituto==ends$instituto[i])])) 
-}
-
-abs_total = rep(0,24)
-for(i in 1:24){
- abs_total[i]=c(sum(mytbl$abstencao[which(instituto==ends$instituto[i])])) 
-}
-
-props_total=rep(0,24)
-for(i in 1:24){
-  props_total[i] = sim_total[i]/(nao_total[i]+sim_total[i]+abs_total[i])
-  props_total[i] = round(props_total[i],2)
-}
-
-
-propn_total=rep(0,24)
-for(i in 1:24){
-  propn_total[i] = nao_total[i]/(nao_total[i]+sim_total[i]+abs_total[i])
-  propn_total[i] = round(propn_total[i],2)
-}
-
-propabs_total=rep(0,24)
-for(i in 1:24){
-  propabs_total[i] = abs_total[i]/(nao_total[i]+sim_total[i]+abs_total[i])
-  propabs_total[i] = round(propabs_total[i],2)
-}
-
-total_inst=rep(0,24)
-for(i in 1:24){
- total_inst[i]=c(sum(mytbl$total[which(instituto==ends$instituto[i])]))
-}
-
-dados=cbind(ends$instituto,nao_total, sim_total, abs_total, propn_total, props_total, propabs_total, total_inst)
+library(data.table)
+mytbl = as.data.table(mytbl)
+dados = mytbl[, list(total=sum(total), sim=sum(sim), nao=sum(nao), abstencao=sum(abstencao)), by=instituto]
+dados = as.data.frame(dados)
+dados$psim = with(dados, sim/total)
+dados$pnao = with(dados, nao/total)
+dados$pabs = with(dados, abstencao/total)
 ```
 
 ## Obtenção de Dados Geográficos
@@ -187,12 +135,12 @@ map = leaflet()
 map = addTiles(map)
 map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
 
-ends= cbind(ends, propn = propn_total[1:21])
+ends = merge(ends, dados)
 
 pal= colorQuantile("RdBu",ends$propn, n=8)
 map = leaflet()
 map = addTiles(map)
-map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto, color = pal(ends$propn))
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto, color = pal(ends$pnao))
 map
 ```
 
@@ -200,28 +148,19 @@ map
 Gráfico de barras do total de votos por instituto e tabela com os votos
 
 ```{r echo=FALSE, warning=FALSE}
-barplot(as.numeric(dados[,8]), main = "Total de votos por Instituto", col = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"))
+barplot(dados$total, main = "Total de votos por Instituto", col = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"))
 legend("topright",legend=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC', 'FEA', 'FCM', 'IFCH','IEL', 'IA', 'IC', 'IE', 'IG', 'IQ', 'FE', 'FEAGRI', 'FEQ', 'PROFIS', 'FCF'),fill = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"), ncol=3 ,bty = "n", cex = 0.55)
+```
+
+```{r grafbar}
+## considere este
+library(ggplot2)
+ggplot(dados, aes(instituto, total)) + geom_bar(stat='identity') + coord_flip() + theme_bw()
 ```
 
 ```{r}
 library(formattable)
-dados2 = as.data.frame(dados[,-c(5:7)])
+dados2 = dados[, c('instituto', 'nao', 'sim', 'abstencao', 'total')]
 names(dados2) = c("Instituto", "Não", "Sim", "Abstenções", "Total")
 formattable(dados2)
 ```
-
-
-## Intervalos de Confiança
-
-```{r stats}
-p = with(mytbl, nao/(total))
-mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
-ics = cbind(pmax(p-mes, 0), pmin(p+mes, 1))
-colnames(ics) = c("lower", "upper")
-mytbl$p = p
-mytbl = cbind(mytbl, ics)
-```
-
-Intervalo de confiança para a proporção:
-
