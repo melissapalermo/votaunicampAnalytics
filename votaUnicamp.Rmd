@@ -119,8 +119,7 @@ dados$pabs = with(dados, abstencao/total)
 
 ##Análises Exploratórias
 
-Podemos fazer algumas análises exploratórias para estudar o comportamento dos nossos dados. Uma das maneiras que encontramos para isso foi mapear o campus da Unicamp a fim de ver qual o posicionamento de cada instituto. Temos na Figura 1
-o mapeamento de acordo com a proporção de votos contrários à greve por instituto.
+Podemos fazer algumas análises exploratórias para estudar o comportamento dos nossos dados. Uma das maneiras que encontramos para isso foi mapear o campus da Unicamp a fim de ver qual o posicionamento de cada instituto. Temos abaixo o mapeamento de acordo com a proporção de votos contrários à greve por instituto, quanto mais vermelho o indicador menor a proporção e quanto mais azul maior a proporção.
 
 ```{r enderecos, echo=FALSE, eval=FALSE}
 map = leaflet()
@@ -143,7 +142,7 @@ library(ggplot2)
 ggplot(dados, aes(reorder(instituto, total), total)) + geom_bar(stat='identity') + coord_flip() + theme_bw()
 ```
 
-
+Na tabela abaixo temos mais detalhadamente os votos de cada instituto.
 
 ```{r, echo=FALSE, fig.cap="Tabela de votos por instituto"}
 library(formattable)
