@@ -1,14 +1,16 @@
 ---
 title: "Vota Unicamp!"
 author: "Grupo"
-output: html_document
+header-includes:
+  - \setlength\parindent{24pt}\setlength{\parskip}{0.0pt plus 1.0pt}
+output: pdf_document
 ---
 
 #Introdução
 
-\newparagraph Em meio à crise que o Brasil se encontra, a educação foi afetada com cortes de orçamento e, infelizmente, isso inclui Universidades. Diante disso, o movimento grevista tem tomado conta da Unicamp. A greve foi decidida por meio de assembleias estudantis, contudo muito se questiona a respeito da representatividade das decisões tomadas uma vez que existe pouca adesão. Com intuito de verificar qual a opinião da classe estudantil foi criado o site “https://votaunicamp.herokuapp.com/” para que os alunos matriculados tanto em cursos de graduação e pós graduação votassem e se quisessem justificassem o voto.
+  Em meio à crise em que o Brasil se encontra, a educação foi afetada com cortes de orçamento e, infelizmente, isso inclui Universidades. Diante disso, o movimento grevista tem tomado conta da Unicamp. A greve foi decidida por meio de assembleias estudantis, contudo muito se questiona a respeito da representatividade das decisões tomadas uma vez que existe pouca adesão. Com intuito de verificar qual a opinião da classe estudantil foi criado o site “https://votaunicamp.herokuapp.com/” para que os alunos matriculados tanto em cursos de graduação e pós graduação votassem e se quisessem justificassem o voto.
 
-```{r input, message=FALSE}
+```{r input, message=FALSE, results='hide', echo=FALSE}
 if (Sys.info()['sysname'] == 'Darwin') Sys.setlocale(locale='UTF-8')
 library(stringr)
 library(rvest)
@@ -19,9 +21,17 @@ tbl = html_table(page)[[2]]
 head(tbl)
 ```
 
+#Objetivos
+
+Deseja-se verificar a proporção de alunos contrários à greve estudantil. Além disso também temos o intuito de estudar o comportamento da classe, como por exemplo, se existe uma relação entre a área de estudo e o voto. Assim podemos caracterizar o perfil do aluno favorável ou contrário a mobilização.
+
+#Metodologia
+
 ## Formatação de Dados
 
-```{r format, message=FALSE, echo=FALSE, warning=FALSE, results='hide'}
+Extraímos do site uma tabela com o número de votos de cada curso, sim não e abstenho, incluindo cursos da Unicamp campus Limeira e Piracicaba.
+
+```{r format, message=FALSE, echo=FALSE, warning=FALSE}
 mytbl = data.frame(codigo=as.integer(str_extract(tbl$Curso, "^\\d+")),
                    nivel=NA,
                    curso=gsub("^(\\d+) - (.*)$", "\\2", tbl$Curso),
@@ -39,7 +49,7 @@ mytbl$curso = gsub("(Mes|Dou).+ em (.*)$", "\\2", mytbl$curso)
 head(mytbl)
 ```
 
-```{r melhoropcaoinstitutos}
+```{r melhoropcaoinstitutos, echo=FALSE}
 gradinst = cbind(nivel='Graduacao', read.table('Grad.csv', header=TRUE, sep=','))
 doutinst = cbind(nivel='Doutorado', read.table('Dout.csv', header=TRUE, sep=','))
 mestinst = cbind(nivel='Mestrado', read.table('Mestr.csv', header=TRUE, sep=','))
@@ -49,24 +59,30 @@ rm(gradinst, doutinst, mestinst)
 mytbl = merge(mytbl, inst)
 ```
 
+##Análises Exploratórias
 
-## Gauge Plots
+Podemos fazer algumas análises exploratórias para estudar o comportamento dos nossos dados. Uma das maneiras que encontramos para isso foi mapear o campus da Unicamp a fim de ver qual o posicionamento de cada instituto. Temos na Figura 1
+o mapeamento de acordo com a 
 
-```{r plot_gauge}
-tbl0 = subset(mytbl, nivel=='Graduacao')
-tbl0$pnao = round(tbl0$nao/tbl0$total*100, 0)
-gauge = gvisGauge(tbl0[, c('curso', 'pnao')], 'curso', 'nao',
-                  options=list(min=0, max=100, greenFrom=0,
-                                 greenTo=20, yellowFrom=40, yellowTo=60,
-                                 redFrom=80, redTo=100, width=400, height=300))
-plot(gauge)
-
+```{r echo=FALSE, message=FALSE, fig.cap="Mapeamento do Campus"}
 ends = data.frame(instituto=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC', 'FEA', 'FCM', 'IFCH','IEL', 'IA', 'IC', 'IE', 'IG', 'IQ', 'FE', 'FEAGRI', 'FEQ', 'PROFIS', 'FCF'),
            lat=c(-22.81583,-22.81657,-22.81935,-22.81938,-22.81476,-22.82132,-22.81596,-22.82063,-22.83063,-22.81546, -22.81537, -22.81531, -22.81488, -22.81480, -22.81328, -22.81889, -22.81658, -22.81927, -22.81989, -22.81749, -22.81770),
            lon=c(-47.06769,-47.06698,-47.06953,-47.06592,-47.07333,-47.06587,-47.06383,-47.06746,-47.06199,-47.06838,-47.06909, -47.07009, -47.06484, -47.06590, -47.06871, -47.06779, -47.06566, -47.06042,-47.06511, -47.06847, -47.07084 )) 
-
 ```
 
+```{r enderecos, echo=FALSE}
+map = leaflet()
+map = addTiles(map)
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
+
+ends = merge(ends, dados)
+
+pal= colorQuantile("RdBu",ends$propn, n=8)
+map = leaflet()
+map = addTiles(map)
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto, color = pal(ends$pnao))
+map
+```
 
 ##Proporções
 
@@ -102,16 +118,11 @@ ics = cbind(pmax(pabs-mes, 0), pmin(pabs+mes, 1))
 mytbl$pabs=pabs
 mytbl$lowerpabs=ics[,1]
 mytbl$upperpabs=ics[,2]
-## comentei abaixo pq nao eh legal usar hifen no nome de var
-## names(mytbl) <- c(names(mytbl)[1:7],"p-nao", "inf-n", "sup-n", "p-sim", "inf-s","sup-s","p-abs", "inf-a", "sup-a")
-## comentei abaixo para evitar erros por arredondamento
-##mytbl[,8:16]=round(mytbl[,8:16],2)
-
 ```
 
 ###Proporções por instituto
 
-```{r}
+```{r, echo=FALSE}
 library(data.table)
 mytbl = as.data.table(mytbl)
 dados = mytbl[, list(total=sum(total), sim=sum(sim), nao=sum(nao), abstencao=sum(abstencao)), by=instituto]
@@ -130,35 +141,17 @@ Obter localizações (lat/lon) por meio do OpenStreet Maps:
 - Olhar o endereço na barra de endereço após o zoom
 - Atualizar o data.frame abaixo com as informações
 
-```{r enderecos}
-map = leaflet()
-map = addTiles(map)
-map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
 
-ends = merge(ends, dados)
-
-pal= colorQuantile("RdBu",ends$propn, n=8)
-map = leaflet()
-map = addTiles(map)
-map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto, color = pal(ends$pnao))
-map
-```
 
 
 Gráfico de barras do total de votos por instituto e tabela com os votos
 
-```{r echo=FALSE, warning=FALSE}
-barplot(dados$total, main = "Total de votos por Instituto", col = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"))
-legend("topright",legend=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC', 'FEA', 'FCM', 'IFCH','IEL', 'IA', 'IC', 'IE', 'IG', 'IQ', 'FE', 'FEAGRI', 'FEQ', 'PROFIS', 'FCF'),fill = c("aliceblue","antiquewhite1", "antiquewhite2","antiquewhite3", "antiquewhite4","darkslategray2","darkslategray3","darkslategray4","darkslategray","azure1", "azure2","azure3", "azure4", "bisque1", "bisque2", "bisque3", "bisque4", "darkolivegreen1","darkolivegreen2","darkolivegreen3","darkolivegreen4","darkseagreen2","darkseagreen3","darkseagreen4"), ncol=3 ,bty = "n", cex = 0.55)
-```
-
-```{r grafbar}
-## considere este
+```{r grafbar, echo=FALSE}
 library(ggplot2)
-ggplot(dados, aes(instituto, total)) + geom_bar(stat='identity') + coord_flip() + theme_bw()
+ggplot(dados, aes(reorder(instituto, total), total)) + geom_bar(stat='identity') + coord_flip() + theme_bw()
 ```
 
-```{r}
+```{r, echo=FALSE}
 library(formattable)
 dados2 = dados[, c('instituto', 'nao', 'sim', 'abstencao', 'total')]
 names(dados2) = c("Instituto", "Não", "Sim", "Abstenções", "Total")
