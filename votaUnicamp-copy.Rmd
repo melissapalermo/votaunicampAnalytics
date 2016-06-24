@@ -1,0 +1,155 @@
+---
+title: "Vota Unicamp!"
+author: "Grupo"
+output: html_document
+---
+
+#Introdução
+
+$\newparagraph$ Em meio à crise que o Brasil se encontra, a educação foi afetada com cortes de orçamento e, infelizmente, isso inclui Universidades. Diante disso, o movimento grevista tem tomado conta da Unicamp. A greve foi decidida por meio de assembleias estudantis, contudo muito se questiona a respeito da representatividade das decisões tomadas uma vez que existe pouca adesão. Com intuito de verificar qual a opinião da classe estudantil foi criado o site “https://votaunicamp.herokuapp.com/” para que os alunos matriculados tanto em cursos de graduação e pós graduação votassem e se quisessem justificassem o voto.
+
+```{r input, message=FALSE, results='hide', echo=FALSE}
+if (Sys.info()['sysname'] == 'Darwin') Sys.setlocale(locale='UTF-8')
+library(stringr)
+library(rvest)
+library(googleVis)
+library(leaflet)
+page = read_html('http://votaunicamp.herokuapp.com/results/', encoding='UTF-8')
+tbl = html_table(page)[[2]]
+head(tbl)
+```
+
+## Formatação de Dados
+
+```{r format, message=FALSE, echo=FALSE, warning=FALSE, results='hide'}
+mytbl = data.frame(codigo=as.integer(str_extract(tbl$Curso, "^\\d+")),
+                   nivel=NA,
+                   curso=gsub("^(\\d+) - (.*)$", "\\2", tbl$Curso),
+                   total=tbl$Total,
+                   sim=as.integer(str_extract(tbl$Sim, "^\\d+")),
+                   nao=as.integer(str_extract(tbl$Não, "^\\d+")),
+                   abstencao=as.integer(str_extract(tbl$Abstenções, "^\\d+")))
+nivel = str_extract(mytbl$curso, "(Dou|Mes)[a-z]+")
+nivel[grepl("Mes", nivel)] = "Mestrado"
+nivel[grepl("Dou", nivel)] = "Doutorado"
+nivel[is.na(nivel)] = "Graduacao"
+mytbl$nivel = nivel
+rm(nivel)
+mytbl$curso = gsub("(Mes|Dou).+ em (.*)$", "\\2", mytbl$curso)
+head(mytbl)
+```
+
+```{r melhoropcaoinstitutos, echo=FALSE}
+gradinst = cbind(nivel='Graduacao', read.table('Grad.csv', header=TRUE, sep=','))
+doutinst = cbind(nivel='Doutorado', read.table('Dout.csv', header=TRUE, sep=','))
+mestinst = cbind(nivel='Mestrado', read.table('Mestr.csv', header=TRUE, sep=','))
+names(gradinst) = names(doutinst) = names(mestinst) = c('nivel', 'codigo', 'instituto', 'area')
+inst = rbind(gradinst, doutinst, mestinst)
+rm(gradinst, doutinst, mestinst)
+mytbl = merge(mytbl, inst)
+```
+
+
+## Gauge Plots
+
+```{r plot_gauge, echo=FALSE, message=FALSE}
+tbl0 = subset(mytbl, nivel=='Graduacao')
+tbl0$pnao = round(tbl0$nao/tbl0$total*100, 0)
+gauge = gvisGauge(tbl0[, c('curso', 'pnao')], 'curso', 'nao',
+                  options=list(min=0, max=100, greenFrom=0,
+                                 greenTo=20, yellowFrom=40, yellowTo=60,
+                                 redFrom=80, redTo=100, width=400, height=300))
+plot(gauge)
+
+ends = data.frame(instituto=c('IMECC', 'IFGW', 'IB', 'FEM', 'FEF', 'FEEC', 'FEC', 'FEA', 'FCM', 'IFCH','IEL', 'IA', 'IC', 'IE', 'IG', 'IQ', 'FE', 'FEAGRI', 'FEQ', 'PROFIS', 'FCF'),
+           lat=c(-22.81583,-22.81657,-22.81935,-22.81938,-22.81476,-22.82132,-22.81596,-22.82063,-22.83063,-22.81546, -22.81537, -22.81531, -22.81488, -22.81480, -22.81328, -22.81889, -22.81658, -22.81927, -22.81989, -22.81749, -22.81770),
+           lon=c(-47.06769,-47.06698,-47.06953,-47.06592,-47.07333,-47.06587,-47.06383,-47.06746,-47.06199,-47.06838,-47.06909, -47.07009, -47.06484, -47.06590, -47.06871, -47.06779, -47.06566, -47.06042,-47.06511, -47.06847, -47.07084 )) 
+
+```
+
+
+##Proporções
+
+```{r , message=FALSE, echo=FALSE, warning=FALSE}
+#Proporção de Não
+pnao = with(mytbl, nao/total)
+mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
+ics = cbind(pmax(pnao-mes, 0), pmin(pnao+mes, 1))
+colnames(ics) = c("lowerpnao", "upperpnao")
+mytbl$pnao = pnao
+mytbl = cbind(mytbl, ics)
+rm(pnao, mes, ics)
+```
+
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+#Proporção de Sim
+psim = with(mytbl, sim/total)
+mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
+ics = cbind(pmax(psim-mes, 0), pmin(psim+mes, 1))
+mytbl$psim=psim
+mytbl$lowerpsim=ics[,1]
+mytbl$upperpsim=ics[,2]
+rm(psim, mes, ics)
+```
+
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+#Proporção de Abstenho
+pabs = with(mytbl, abstencao/total)
+mes = qnorm(.975)*sqrt(1/(4*mytbl$total))
+ics = cbind(pmax(pabs-mes, 0), pmin(pabs+mes, 1))
+mytbl$pabs=pabs
+mytbl$lowerpabs=ics[,1]
+mytbl$upperpabs=ics[,2]
+```
+
+###Proporções por instituto
+
+```{r, echo=FALSE}
+library(data.table)
+mytbl = as.data.table(mytbl)
+dados = mytbl[, list(total=sum(total), sim=sum(sim), nao=sum(nao), abstencao=sum(abstencao)), by=instituto]
+dados = as.data.frame(dados)
+dados$psim = with(dados, sim/total)
+dados$pnao = with(dados, nao/total)
+dados$pabs = with(dados, abstencao/total)
+```
+
+## Obtenção de Dados Geográficos
+
+Obter localizações (lat/lon) por meio do OpenStreet Maps:
+
+- Abrir OpenStreet Maps (OSM) em (http://www.openstreetmap.org/#map=16/-22.8173/-47.0677)
+- Dar zoom máximo no instituto de interesse
+- Olhar o endereço na barra de endereço após o zoom
+- Atualizar o data.frame abaixo com as informações
+
+```{r enderecos, echo=FALSE}
+map = leaflet()
+map = addTiles(map)
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
+
+ends = merge(ends, dados)
+
+pal= colorQuantile("RdBu",ends$propn, n=8)
+map = leaflet()
+map = addTiles(map)
+map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto, color = pal(ends$pnao))
+map
+```
+
+
+Gráfico de barras do total de votos por instituto e tabela com os votos
+
+```{r grafbar, echo=FALSE}
+library(ggplot2)
+ggplot(dados, aes(reorder(instituto, total), total)) + geom_bar(stat='identity') + coord_flip() + theme_bw()
+```
+
+```{r, echo=FALSE}
+library(formattable)
+dados2 = dados[, c('instituto', 'nao', 'sim', 'abstencao', 'total')]
+names(dados2) = c("Instituto", "Não", "Sim", "Abstenções", "Total")
+formattable(dados2)
+```
