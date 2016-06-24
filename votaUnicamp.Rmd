@@ -1,8 +1,7 @@
 ---
 title: "Vota Unicamp!"
-author: "Grupo"
+author: "Amanda, Bruno, Mariana, Melissa, Tamilyn e Yasmine"
 output: html_document
-header-includes: \setlength\parindent{24pt}\setlength{\parskip}{0.0pt plus 1.0pt}
 ---
 
 #Introdução
@@ -123,7 +122,7 @@ dados$pabs = with(dados, abstencao/total)
 Podemos fazer algumas análises exploratórias para estudar o comportamento dos nossos dados. Uma das maneiras que encontramos para isso foi mapear o campus da Unicamp a fim de ver qual o posicionamento de cada instituto. Temos na Figura 1
 o mapeamento de acordo com a proporção de votos contrários à greve por instituto.
 
-```{r enderecos, echo=FALSE, fig.cap="Mapeamento do campus Unicamp Campinas"}
+```{r enderecos, echo=FALSE, eval=FALSE}
 map = leaflet()
 map = addTiles(map)
 map = addCircleMarkers(map, lat=ends$lat, lng=ends$lon, popup = ends$instituto)
