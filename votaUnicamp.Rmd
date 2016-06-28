@@ -6,7 +6,8 @@ output: html_document
 
 #Introdução
 
-  Em meio à crise em que o Brasil se encontra, a educação foi afetada com cortes de orçamento e, infelizmente, isso inclui Universidades. Diante disso, o movimento grevista tem tomado conta da Unicamp. A greve foi decidida por meio de assembleias estudantis, contudo muito se questiona a respeito da representatividade das decisões tomadas uma vez que existe pouca adesão. Com intuito de verificar qual a opinião da classe estudantil foi criado o site “https://votaunicamp.herokuapp.com/” para que os alunos matriculados tanto em cursos de graduação e pós graduação votassem e se quisessem justificassem o voto.
+  Em meio à crise em que o Brasil se encontra, a educação foi afetada com cortes de orçamento e, infelizmente, isso inclui as  Universidades. 
+  Diante disso, o movimento grevista tem tomado conta da Unicamp. A greve foi decidida por meio de assembleias estudantis, contudo muito, se questiona a respeito da representatividade das decisões tomadas uma vez que existe pouca adesão. Com intuito de verificar qual a opinião da classe estudantil, foi criado o site “https://votaunicamp.herokuapp.com/” para que os alunos matriculados tanto em cursos de graduação e pós graduação votassem e, se quisessem, justificassem o voto.
 
 ```{r input, message=FALSE, results='hide', echo=FALSE}
 if (Sys.info()['sysname'] == 'Darwin') Sys.setlocale(locale='UTF-8')
